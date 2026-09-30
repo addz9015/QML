@@ -219,7 +219,7 @@ python -m src.phase4 --stage report           # tables + figures
 
 python -m src.check_results                # integrity checks on all of the above
 python tests/test_smoke.py                 # 16 fast unit tests
-streamlit run app.py                       # demo: upload up to 2 images
+streamlit run app.py                       # live demo + a tab per phase (1-2, 3, 4, 5)
 ```
 
 Times are for a CPU-only laptop. Run everything from the project root. Ideal models are cached in
@@ -230,7 +230,8 @@ Times are for a CPU-only laptop. Run everything from the project root. Ideal mod
 
 ```
 qml_image_classifier/
-├── app.py                 Streamlit demo: prediction + "inside the circuit" (angles, per-layer ⟨Z⟩, drawing)
+├── app.py                 Streamlit: live prediction + "inside the circuit", plus a results
+│                          tab for each phase (reads directly from results/, nothing hardcoded)
 ├── requirements.txt       pinned versions used for every result
 ├── src/
 │   ├── config.py          all hyper-parameters (CFG)

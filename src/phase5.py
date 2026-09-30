@@ -242,6 +242,23 @@ def make_report():
     piv = df.pivot_table(index=["image"], columns="backend", values=["q0", "q1", "q2", "q3"])
     print(piv)
 
+    def zvals(backend):
+        sub = df[df.backend == backend].sort_values("image")
+        return sub[["q0", "q1", "q2", "q3"]].to_numpy()
+
+    def rmse(a, b):
+        return float(np.sqrt(np.mean((a - b) ** 2)))
+
+    def acc(z, labels):
+        model, scaler, classes = load_model()
+        w = model.head.weight.detach().numpy()
+        b = model.head.bias.detach().numpy()
+        return float(((z @ w.T + b).argmax(1) == labels).mean())
+
+    ideal, noisy, hw = zvals("ideal"), zvals("noisy_sim"), zvals("hardware")
+    labels = df[df.backend == "ideal"].sort_values("image")["true_label"].to_numpy()
+    n = len(labels)
+
     fig, ax = plt.subplots(figsize=(6, 4))
     for backend, marker in (("ideal", "o"), ("noisy_sim", "s"), ("hardware", "^")):
         sub = df[df.backend == backend]
@@ -254,6 +271,51 @@ def make_report():
     fig.tight_layout()
     fig.savefig(os.path.join(CFG.results_dir, "phase5_comparison.png"), dpi=140)
     print("\nplot -> results/phase5_comparison.png")
+
+    lines = [
+        "# Phase 5 - real IBM Quantum hardware", "",
+        f"{n} held-out test images, one Estimator job, {COMPARISON_NOISE['type']} noise at "
+        f"p={COMPARISON_NOISE['p']} as the matched simulated-noise comparison point.", "",
+        "| backend | RMSE of <Z> vs ideal | accuracy |",
+        "|---|---|---|",
+        f"| ideal simulator | 0.000 | {acc(ideal, labels):.3f} |",
+        f"| noisy simulator (p={COMPARISON_NOISE['p']} depolarizing) | {rmse(noisy, ideal):.4f} | {acc(noisy, labels):.3f} |",
+        f"| real hardware | {rmse(hw, ideal):.4f} | {acc(hw, labels):.3f} |",
+        "",
+        "Real hardware tracked the ideal simulator more closely than the matched simulated-noise "
+        "condition did - the idealized depolarizing channel used in Phases 3-4 is a pessimistic "
+        "stand-in for this circuit on this backend.",
+    ]
+
+    if os.path.exists(ZNE_RAW):
+        zdf = pd.read_csv(ZNE_RAW)
+        zideal = zdf[zdf.fold == 0][["ideal_q0", "ideal_q1", "ideal_q2", "ideal_q3"]].to_numpy()
+        from phase4 import extrapolate_to_zero
+        f0 = zdf[zdf.fold == 0].sort_values("image")[["q0", "q1", "q2", "q3"]].to_numpy()
+        f1 = zdf[zdf.fold == 1].sort_values("image")[["q0", "q1", "q2", "q3"]].to_numpy()
+        f2 = zdf[zdf.fold == 2].sort_values("image")[["q0", "q1", "q2", "q3"]].to_numpy()
+        zne = np.array([extrapolate_to_zero(FOLD_LAMS, [f0[i], f1[i], f2[i]], order=2)
+                        for i in range(len(f0))])
+        lines += [
+            "", "## Gate-folding ZNE on real hardware", "",
+            "| condition | RMSE of <Z> vs ideal |", "|---|---|",
+            f"| fold=0 (raw hardware) | {rmse(f0, zideal):.4f} |",
+            f"| fold=1 (3x noise) | {rmse(f1, zideal):.4f} |",
+            f"| fold=2 (5x noise) | {rmse(f2, zideal):.4f} |",
+            f"| ZNE, Richardson-extrapolated to zero | {rmse(zne, zideal):.4f} |",
+            "",
+            "Folded (deliberately noisier) circuits came out closer to ideal than the unfolded "
+            "one, the opposite of what gate-folding ZNE assumes - extrapolating that reversed "
+            "trend overshoots and gives a worse estimate than not mitigating at all. See the "
+            "README for the full discussion and a plausible explanation (default gate twirling / "
+            "measurement-error mitigation on the real device).",
+        ]
+
+    text = "\n".join(lines)
+    with open(os.path.join(CFG.results_dir, "phase5_summary.md"), "w", encoding="utf-8") as fh:
+        fh.write(text + "\n")
+    print("\n" + text)
+    print("\nsummary -> results/phase5_summary.md")
 
 
 def main():
