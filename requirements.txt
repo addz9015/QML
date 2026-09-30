@@ -1,0 +1,20 @@
+# Noise-Aware Hybrid Quantum-Classical Image Classification
+# Exact versions every result in this repository was produced with (Python 3.12, Windows).
+# Works on Python 3.10-3.12. PennyLane 0.45 needs NumPy >= 2, hence torch >= 2.3.
+numpy==2.1.3
+pillow==12.3.0
+scikit-learn==1.9.1
+scipy==1.18.1
+matplotlib==3.11.2
+pandas==3.0.6
+joblib==1.6.0
+pennylane==0.45.1
+torch==2.5.1
+torchvision==0.20.1
+streamlit==1.64.0
+
+# Phase 5 - real IBM Quantum hardware (needs your own API key, see README "Phase 5")
+qiskit==2.3.0
+qiskit-ibm-runtime==0.45.1
+pennylane-qiskit==0.45.0
+python-dotenv==1.2.3

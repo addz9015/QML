@@ -1,0 +1,29 @@
+# --- environment / Python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# --- data: large and/or not redistributable; see README "Data" ---
+data/raw_full/
+data/train/
+data/test/
+
+# --- regenerable caches (rebuilt automatically) ---
+models/cache/
+models/resnet_features.npz
+models/resnet_test_features.npz
+
+# --- Phase 5: never commit IBM Quantum credentials, even if saved into the repo by mistake ---
+.env
+*.env
+qiskit-ibm.json
+ibm_quantum_credentials*
+
+# --- editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.zip
